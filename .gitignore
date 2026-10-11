@@ -120,6 +120,13 @@
 **/.cache/
 **/tmp/
 **/temp/
+**/.monkeycode-tmp-files/
+
+# Local database
+**/data/*.db
+**/data/*.db-wal
+**/data/*.db-shm
+backend/data/
 
 # Dart
 **/.dart_tool/
