@@ -63,7 +63,10 @@ async function htmlDev(page) {
         <div class="handle">@${esc(l.instagram_handle)}</div>
         <div class="muted">${esc(l.nicho || "")} · ${esc(l.cidade || "")}</div>
         <div class="field" style="margin-top:10px"><label>Link da demo</label><input class="input" data-link="${esc(l.id)}" placeholder="https://..." /></div>
-        <button class="btn ok" data-pronta="${esc(l.id)}">Demo pronta</button>
+        <div class="row">
+          <button class="btn ok" data-pronta="${esc(l.id)}">Demo pronta</button>
+          <button class="btn ghost" data-devolver="${esc(l.id)}">Devolver à fila</button>
+        </div>
       </div>`).join("") || `<div class="card muted">Nada em andamento.</div>`;
     return `<div class="grid">${cards}</div>`;
   }
@@ -116,6 +119,10 @@ function bindDev(page, go) {
     const id = e.currentTarget.dataset.pronta;
     const link = rootEl().querySelector(`[data-link="${id}"]`)?.value || "";
     try { await rpc("marcar_demo_pronta", { p_lead_id: id, p_link: link }); flash("ok", "Demo liberada para os vendedores."); go(); }
+    catch (err) { flash("err", err.message); }
+  });
+  on(rootEl(), "[data-devolver]", "click", async (e) => {
+    try { await rpc("devolver_lead_dev", { p_lead_id: e.currentTarget.dataset.devolver }); flash("ok", "Perfil devolvido à fila."); go(); }
     catch (err) { flash("err", err.message); }
   });
   on(rootEl(), "[data-aj-pegar]", "click", async (e) => {

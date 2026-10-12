@@ -20,8 +20,8 @@ function renderLogin(onOk) {
         <div class="brand" style="margin-bottom:16px">
           <div class="logo">W</div>
           <div>
-            <div class="h1">WebWin</div>
-            <div class="muted">Sites a partir do @ do Instagram</div>
+            <div class="h1">${esc(siteMeta().nome)}</div>
+            <div class="muted">${esc(siteMeta().sub)}</div>
           </div>
         </div>
         <div class="field"><label>E-mail</label><input class="input" id="email" type="email" required /></div>

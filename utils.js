@@ -85,3 +85,18 @@ function rootEl() {
 function on(el, sel, ev, fn) {
   el.querySelectorAll(sel).forEach((n) => n.addEventListener(ev, fn));
 }
+
+function getSite() {
+  const h = String(location.hostname || "").toLowerCase();
+  const p = String(location.pathname || "").toLowerCase();
+  if (h.startsWith("vendas.") || p.indexOf("/vendas") === 0) return "vendedor";
+  if (h.startsWith("colab.") || p.indexOf("/colab") === 0) return "desenvolvedor";
+  return "admin";
+}
+
+function siteMeta() {
+  const s = getSite();
+  if (s === "vendedor") return { role: "vendedor", nome: "WebWin Vendas", sub: "Área do vendedor" };
+  if (s === "desenvolvedor") return { role: "desenvolvedor", nome: "WebWin Colab", sub: "Área do colaborador" };
+  return { role: "admin", nome: "WebWin Admin", sub: "Painel administrativo" };
+}

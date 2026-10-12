@@ -470,6 +470,35 @@ begin
 end;
 $$;
 
+create or replace function public.devolver_lead_dev(p_lead_id uuid)
+returns public.leads
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  r public.leads;
+begin
+  if public.meu_role() <> 'desenvolvedor' then
+    raise exception 'Você não tem permissão para essa ação.';
+  end if;
+  update public.leads
+     set status = 'na_fila',
+         desenvolvedor_id = null,
+         link_demo = null,
+         atualizado_em = now()
+   where id = p_lead_id
+     and desenvolvedor_id = auth.uid()
+     and status = 'em_producao'
+  returning * into r;
+  if r.id is null then
+    raise exception 'Não foi possível devolver esta demo.';
+  end if;
+  perform public.registrar_auditoria('devolver_lead_dev', 'leads', r.id::text, jsonb_build_object('handle', r.instagram_handle));
+  return r;
+end;
+$$;
+
 create or replace function public.pegar_lead_vendedor(p_lead_id uuid)
 returns public.leads
 language plpgsql
@@ -813,6 +842,7 @@ grant execute on function public.liberar_reservas_expiradas() to authenticated;
 grant execute on function public.adicionar_leads(text, text, text) to authenticated;
 grant execute on function public.pegar_lead_dev(uuid) to authenticated;
 grant execute on function public.marcar_demo_pronta(uuid, text) to authenticated;
+grant execute on function public.devolver_lead_dev(uuid) to authenticated;
 grant execute on function public.pegar_lead_vendedor(uuid) to authenticated;
 grant execute on function public.atualizar_lead_vendedor(uuid, public.lead_status, text, text) to authenticated;
 grant execute on function public.fechar_venda(uuid, numeric, text, public.plano_tipo) to authenticated;
