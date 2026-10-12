@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node src/server.js",
-    "test": "node src/tests.js"
+    "test": "node --experimental-sqlite src/tests.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     host: "0.0.0.0",
     port: 5173,
-    allowedHosts: [".monkeycode-ai.live"],
+    allowedHosts: [".monkeycode-ai.live", "webw1n.shop", "www.webw1n.shop"],
     proxy: {
       "/api": {
         target: "http://127.0.0.1:3001",

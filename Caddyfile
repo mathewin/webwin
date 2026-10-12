@@ -1,0 +1,3 @@
+webw1n.shop, www.webw1n.shop {
+  reverse_proxy 127.0.0.1:3001
+}

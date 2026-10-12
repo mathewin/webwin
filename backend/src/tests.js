@@ -1,5 +1,30 @@
+process.env.WEBWIN_TEST = "1";
+process.env.WEBWIN_DB_PATH = require("path").join(__dirname, "..", "data", "webwin.test.db");
+process.env.WEBWIN_ADMIN_EMAIL = "admin@webw1n.shop";
+process.env.WEBWIN_ADMIN_PASSWORD = "admin123456";
+process.env.WEBWIN_ADMIN_NOME = "Admin WebWin";
+
+const fs = require("fs");
 const assert = require("assert");
-const { db } = require("./db");
+const bcrypt = require("bcryptjs");
+
+try {
+  fs.unlinkSync(process.env.WEBWIN_DB_PATH);
+} catch {
+  /* ignore */
+}
+try {
+  fs.unlinkSync(process.env.WEBWIN_DB_PATH + "-wal");
+} catch {
+  /* ignore */
+}
+try {
+  fs.unlinkSync(process.env.WEBWIN_DB_PATH + "-shm");
+} catch {
+  /* ignore */
+}
+
+const { db, uuid, now } = require("./db");
 const app = require("./server");
 
 function listen() {
@@ -22,13 +47,39 @@ async function req(server, method, path, { token, body } = {}) {
   return { status: res.status, data };
 }
 
-async function login(server, email) {
-  const r = await req(server, "POST", "/api/login", { body: { email, senha: "webwin123" } });
-  assert.equal(r.status, 200, `login falhou para ${email}`);
+async function login(server, email, senha = "webwin123") {
+  const r = await req(server, "POST", "/api/login", { body: { email, senha } });
+  assert.equal(r.status, 200, `login falhou para ${email}: ${r.data.erro || r.status}`);
   return r.data.token;
 }
 
+function criarUsuario(nome, email, role) {
+  const id = uuid();
+  db.prepare(
+    `INSERT INTO profiles (id, nome, email, senha_hash, role, ativo, deve_trocar_senha, criado_em)
+     VALUES (?, ?, ?, ?, ?, 1, 0, ?)`
+  ).run(id, nome, email, bcrypt.hashSync("webwin123", 10), role, now());
+  return id;
+}
+
+function criarLead(handle, status = "na_fila") {
+  const id = uuid();
+  const t = now();
+  db.prepare(
+    `INSERT INTO leads (id, instagram_handle, nicho, cidade, status, atualizado_em, criado_em)
+     VALUES (?, ?, 'Nicho', 'Cidade', ?, ?, ?)`
+  ).run(id, handle, status, t, t);
+  return id;
+}
+
 async function run() {
+  criarUsuario("Carla Vendas", "iris.p@example.org", "vendedor");
+  criarUsuario("Bruno Vendas", "paula.r@example.org", "vendedor");
+  criarUsuario("Ana Dev", "nina.v@example.com", "desenvolvedor");
+  criarUsuario("Diego Dev", "oscar.d@example.net", "desenvolvedor");
+  criarLead("perfil.um");
+  criarLead("perfil.dois");
+
   const server = await listen();
   const fail = [];
   const ok = [];
@@ -42,7 +93,7 @@ async function run() {
   };
 
   try {
-    const admin = await login(server, "xena.w@example.org");
+    const admin = await login(server, "admin@webw1n.shop", "admin123456");
     const vend1 = await login(server, "iris.p@example.org");
     const vend2 = await login(server, "paula.r@example.org");
     const dev1 = await login(server, "nina.v@example.com");
@@ -58,8 +109,6 @@ async function run() {
     check("vendedor só vê as próprias vendas", () => {
       assert.equal(vendasOutro.status, 200);
       assert.equal(vendasOutro2.status, 200);
-      const ids1 = new Set(vendasOutro.data.vendas.map((v) => v.vendedor_id));
-      for (const id of ids1) assert.ok(!id || true);
     });
 
     const fila = await req(server, "GET", "/api/dev/fila", { token: dev1 });
@@ -80,7 +129,7 @@ async function run() {
     const meu = andamento.data[0];
     await req(server, "POST", `/api/dev/pronta/${meu.id}`, {
       token: r1.status === 200 ? dev1 : dev2,
-      body: { link_demo: "https://demo.webwin.test/" + meu.instagram_handle },
+      body: { link_demo: "https://demo.webw1n.shop/" + meu.instagram_handle },
     });
 
     const disp = await req(server, "GET", "/api/vendedor/disponiveis", { token: vend1 });

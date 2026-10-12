@@ -4,10 +4,10 @@ ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 # Start backend API
 cd "$ROOT/backend"
-node src/server.js &
+node --experimental-sqlite src/server.js &
 BACKEND_PID=$!
 
-# Start frontend (exposed preview port)
+# Start frontend (this will be the exposed port)
 cd "$ROOT/frontend"
 npm run dev
 

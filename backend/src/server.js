@@ -1,3 +1,5 @@
+const path = require("path");
+const fs = require("fs");
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
@@ -5,6 +7,7 @@ const { db, uuid, now, audit, getConfig, liberarReservasExpiradas, sanitizeLeadF
 
 const SECRET = process.env.WEBWIN_JWT_SECRET || "webwin-dev-secret-change-me";
 const PORT = Number(process.env.PORT || 3001);
+const FRONTEND_DIST = process.env.FRONTEND_DIST || path.join(__dirname, "..", "..", "frontend", "dist");
 const clients = new Set();
 
 const app = express();
@@ -720,6 +723,14 @@ app.get("/api/admin/leads", auth, requireRole("admin"), (_req, res) => {
   res.json(rows);
 });
 
+if (fs.existsSync(FRONTEND_DIST)) {
+  app.use(express.static(FRONTEND_DIST));
+  app.use((req, res, next) => {
+    if (req.path.startsWith("/api") || req.method !== "GET") return next();
+    res.sendFile(path.join(FRONTEND_DIST, "index.html"));
+  });
+}
+
 if (require.main === module) {
   setInterval(() => {
     try {
@@ -731,7 +742,7 @@ if (require.main === module) {
   }, 60 * 1000);
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`WebWin API em http://localhost:${PORT}`);
+    console.log(`WebWin em http://localhost:${PORT}`);
   });
 }
 

@@ -6,7 +6,7 @@ const crypto = require("crypto");
 
 const DATA_DIR = path.join(__dirname, "..", "data");
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-const DB_PATH = path.join(DATA_DIR, "webwin.db");
+const DB_PATH = process.env.WEBWIN_DB_PATH || path.join(DATA_DIR, "webwin.db");
 
 const db = new DatabaseSync(DB_PATH);
 db.exec("PRAGMA journal_mode = WAL");
@@ -114,48 +114,26 @@ function seedIfEmpty() {
   const count = db.prepare("SELECT COUNT(*) as n FROM profiles").get().n;
   if (count > 0) return;
 
-  const senha = bcrypt.hashSync("webwin123", 10);
+  const email = String(process.env.WEBWIN_ADMIN_EMAIL || "admin@webw1n.shop").trim().toLowerCase();
+  const senhaPlana = process.env.WEBWIN_ADMIN_PASSWORD || crypto.randomBytes(9).toString("base64url");
+  const nome = process.env.WEBWIN_ADMIN_NOME || "Admin WebWin";
+  const adminId = uuid();
   const t = now();
 
-  const adminId = uuid();
-  const v1 = uuid();
-  const v2 = uuid();
-  const d1 = uuid();
-  const d2 = uuid();
-
-  const insP = db.prepare(
+  db.prepare(
     `INSERT INTO profiles (id, nome, email, senha_hash, role, ativo, deve_trocar_senha, criado_em)
-     VALUES (?, ?, ?, ?, ?, 1, ?, ?)`
-  );
+     VALUES (?, ?, ?, ?, 'admin', 1, 1, ?)`
+  ).run(adminId, nome, email, bcrypt.hashSync(senhaPlana, 10), t);
 
-  insP.run(adminId, "Admin WebWin", "xena.w@example.org", senha, "admin", 0, t);
-  insP.run(v1, "Carla Vendas", "iris.p@example.org", senha, "vendedor", 1, t);
-  insP.run(v2, "Bruno Vendas", "paula.r@example.org", senha, "vendedor", 1, t);
-  insP.run(d1, "Ana Dev", "nina.v@example.com", senha, "desenvolvedor", 1, t);
-  insP.run(d2, "Diego Dev", "oscar.d@example.net", senha, "desenvolvedor", 1, t);
+  audit(adminId, "bootstrap_admin", "profiles", adminId, { email });
 
-  const leads = [
-    ["manicure.luna", "Manicure", "São Paulo", "na_fila", null, null, null],
-    ["salao.bella", "Salão de beleza", "Rio de Janeiro", "na_fila", null, null, null],
-    ["barbearia.rei", "Barbearia", "Belo Horizonte", "na_fila", null, null, null],
-    ["oficina.turbo", "Oficina mecânica", "Curitiba", "na_fila", null, null, null],
-    ["nails.pri", "Manicure", "Campinas", "em_producao", d1, null, null],
-    ["studio.corte", "Barbearia", "Porto Alegre", "demo_pronta", d1, null, "https://demo.webwin.test/studio-corte"],
-    ["estetica.sol", "Estética", "Salvador", "demo_pronta", d2, null, "https://demo.webwin.test/estetica-sol"],
-    ["pet.banho", "Pet shop", "Fortaleza", "demo_pronta", d2, null, "https://demo.webwin.test/pet-banho"],
-    ["lanchonete.bom", "Alimentação", "Recife", "demo_pronta", d1, null, "https://demo.webwin.test/lanchonete-bom"],
-    ["pilates.vida", "Estúdio de pilates", "Brasília", "na_fila", null, null, null],
-  ];
-
-  const insL = db.prepare(
-    `INSERT INTO leads (id, instagram_handle, nicho, cidade, status, desenvolvedor_id, vendedor_id, link_demo, foto_capa, atualizado_em, criado_em)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  );
-  for (const [handle, nicho, cidade, status, devId, vendId, link] of leads) {
-    insL.run(uuid(), handle, nicho, cidade, status, devId, vendId, link, `https://picsum.photos/seed/${handle}/640/360`, t, t);
+  if (!process.env.WEBWIN_TEST) {
+    console.log("Admin inicial criado. Troque a senha no primeiro login.");
+    console.log(`E-mail: ${email}`);
+    if (!process.env.WEBWIN_ADMIN_PASSWORD) {
+      console.log(`Senha provisória: ${senhaPlana}`);
+    }
   }
-
-  audit(adminId, "seed", "profiles", adminId, { msg: "Base inicial criada" });
 }
 
 function audit(usuarioId, acao, tabela, registroId, detalhes) {

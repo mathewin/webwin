@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { api, setToken, getToken, brl, dataBr, dataCurta } from "./api";
 
 function useAuth() {
@@ -100,10 +100,6 @@ function Login({ onLogin }) {
         </div>
         <ErrorBox error={error} />
         <button className="btn" disabled={busy}>{busy ? "Entrando..." : "Entrar"}</button>
-        <p className="muted" style={{ marginTop: 14, fontSize: 13 }}>
-          Contas de teste — senha <b>webwin123</b><br />
-          xena.w@example.org · iris.p@example.org · nina.v@example.com
-        </p>
       </form>
     </div>
   );
