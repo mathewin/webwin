@@ -50,8 +50,13 @@ async function htmlVend(page, cfg, fechar) {
     return `<div class="grid"><div class="card muted">Reservas ${reservas}/${limite}</div>${cards}</div>`;
   }
   if (page === "minhas") {
-    const { data, error } = await sb.from("leads").select("id,instagram_handle,status,whatsapp,anotacoes,link_demo").eq("vendedor_id", uid).in("status", ["reservada", "contatado", "negociando"]).order("atualizado_em", { ascending: false });
+    const { data, error } = await sb.from("leads").select("id,instagram_handle,status,link_demo").eq("vendedor_id", uid).in("status", ["reservada", "contatado", "negociando"]).order("atualizado_em", { ascending: false });
     if (error) throw new Error(pgErr(error));
+    const ids = (data || []).map((l) => l.id);
+    const { data: contatos } = ids.length
+      ? await sb.from("leads_contato").select("id,whatsapp,anotacoes").in("id", ids)
+      : { data: [] };
+    const cmap = Object.fromEntries((contatos || []).map((c) => [c.id, c]));
     const cards = (data || []).map((l) => `
       <div class="card">
         <div class="row" style="justify-content:space-between">
@@ -59,11 +64,11 @@ async function htmlVend(page, cfg, fechar) {
           ${badge(l.status)}
         </div>
         ${l.link_demo ? `<a href="${esc(l.link_demo)}" target="_blank" rel="noreferrer">Abrir demo</a>` : ""}
-        <div class="field" style="margin-top:8px"><label>WhatsApp do cliente</label><input class="input" data-wa="${esc(l.id)}" value="${esc(l.whatsapp || "")}" /></div>
-        <div class="field"><label>Anotações</label><textarea rows="2" data-an="${esc(l.id)}">${esc(l.anotacoes || "")}</textarea></div>
+        <div class="field" style="margin-top:8px"><label>WhatsApp do cliente</label><input class="input" data-wa="${esc(l.id)}" data-cur="${esc(l.status)}" value="${esc(cmap[l.id]?.whatsapp || "")}" /></div>
+        <div class="field"><label>Anotações</label><textarea rows="2" data-an="${esc(l.id)}" data-cur="${esc(l.status)}">${esc(cmap[l.id]?.anotacoes || "")}</textarea></div>
         <div class="row">
           ${["contatado", "negociando", "perdido"].map((s) => `<button class="btn ghost" data-st="${esc(l.id)}" data-s="${s}">${s}</button>`).join("")}
-          ${l.whatsapp ? `<a class="btn" href="https://wa.me/55${String(l.whatsapp).replace(/\D/g, "")}" target="_blank" rel="noreferrer">WhatsApp</a>` : ""}
+          ${cmap[l.id]?.whatsapp ? `<a class="btn" href="https://wa.me/55${String(cmap[l.id].whatsapp).replace(/\D/g, "")}" target="_blank" rel="noreferrer">WhatsApp</a>` : ""}
           <button class="btn ok" data-fechar='${JSON.stringify({ id: l.id, instagram_handle: l.instagram_handle })}'>Fechar venda</button>
         </div>
       </div>`).join("") || `<div class="card muted">Você ainda não reservou demos.</div>`;
@@ -129,13 +134,13 @@ function bindVend(page, go, cfg, openFechar, closeFechar) {
   on(rootEl(), "[data-wa]", "blur", async (e) => {
     const id = e.currentTarget.dataset.wa;
     const { wa, an } = patchLead(id);
-    try { await rpc("atualizar_lead_vendedor", { p_lead_id: id, p_status: "reservada", p_whatsapp: wa, p_anotacoes: an }); }
+    try { await rpc("atualizar_lead_vendedor", { p_lead_id: id, p_status: e.currentTarget.dataset.cur || "reservada", p_whatsapp: wa, p_anotacoes: an }); }
     catch (err) { flash("err", err.message); }
   });
   on(rootEl(), "[data-an]", "blur", async (e) => {
     const id = e.currentTarget.dataset.an;
     const { wa, an } = patchLead(id);
-    try { await rpc("atualizar_lead_vendedor", { p_lead_id: id, p_status: "reservada", p_whatsapp: wa, p_anotacoes: an }); }
+    try { await rpc("atualizar_lead_vendedor", { p_lead_id: id, p_status: e.currentTarget.dataset.cur || "reservada", p_whatsapp: wa, p_anotacoes: an }); }
     catch (err) { flash("err", err.message); }
   });
   on(rootEl(), "[data-st]", "click", async (e) => {
