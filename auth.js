@@ -40,7 +40,13 @@ function renderLogin(onOk) {
       const email = rootEl().querySelector("#email").value.trim().toLowerCase();
       const senha = rootEl().querySelector("#senha").value;
       const { error } = await getSb().auth.signInWithPassword({ email, password: senha });
-      if (error) throw new Error("E-mail ou senha inválidos.");
+      if (error) {
+        const msg = String(error.message || "");
+        if (/invalid login|invalid credentials|email or password/i.test(msg)) {
+          throw new Error("E-mail ou senha inválidos.");
+        }
+        throw new Error(msg || "E-mail ou senha inválidos.");
+      }
       const user = await loadPerfil();
       if (!user) throw new Error("Perfil não encontrado.");
       onOk(user);
