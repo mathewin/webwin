@@ -1,94 +1,76 @@
 # WebWin
 
-Sistema interno para vender sites a partir do @ do Instagram, com três áreas: admin, vendedor e desenvolvedor.
+Sistema interno para vender sites a partir do @ do Instagram. Tres areas: admin, vendedor e desenvolvedor.
 
-Interface em português do Brasil, pensada primeiro para celular, visual escuro. Sem cadastro público: só o admin cria contas.
+Site estatico no GitHub Pages. Banco e login no Supabase (projeto `webwin`). Sem servidor proprio.
 
-Domínio de produção: `webw1n.shop`
+Dominio: `webw1n.shop`
 
-## Primeiro acesso
+O plano gratuito do Supabase pausa o projeto apos 7 dias sem uso. Entre no painel e reative se isso acontecer.
 
-Na primeira subida o sistema cria **somente** o admin, com fila, vendas e usuários vazios.
+## Subir do zero
 
-Defina as variáveis abaixo antes de iniciar (senão uma senha provisória aleatória é impressa no log):
+### 1. Schema
 
-```bash
-export WEBWIN_ADMIN_EMAIL=admin@webw1n.shop
-export WEBWIN_ADMIN_PASSWORD=sua-senha-forte
-export WEBWIN_JWT_SECRET=uma-chave-longa-e-aleatoria
-```
+No SQL Editor do projeto `webwin`, cole e execute `supabase/schema.sql` inteiro.
 
-No primeiro login o admin troca a senha provisória. Depois crie vendedores e desenvolvedores em Usuários.
+Isso cria tabelas, RLS, GRANTs por coluna e funcoes. Admin nao consegue ler `whatsapp` nem `anotacoes` (so o vendedor dono, via view `leads_contato`).
 
-## Desenvolvimento local
+### 2. Edge Function
+
+Publique `supabase/functions/criar-usuario` no mesmo projeto. A function usa `SUPABASE_SERVICE_ROLE_KEY` do ambiente da function — nao cole essa chave no codigo nem no repo.
 
 ```bash
-cd backend
-npm install
-
-cd ../frontend
-npm install
+npx supabase functions deploy criar-usuario --project-ref akvdxadykerwjdlqtyeg
 ```
 
-```bash
-bash start.sh
-```
+### 3. config.js
 
-Front em `http://localhost:5173`. API em `http://localhost:3001`. O Vite encaminha `/api` para o backend.
+Abra `config.js` e troque `COLE_AQUI_A_ANON_KEY` pela **anon key** (nao a service_role).
 
-## Produção (um único processo)
+A URL ja aponta para `https://akvdxadykerwjdlqtyeg.supabase.co`.
 
-```bash
-cd frontend
-npm install
-npm run build
+### 4. Primeiro admin
 
-cd ../backend
-npm install
-export PORT=3001
-export FRONTEND_DIST="$(pwd)/../frontend/dist"
-export WEBWIN_ADMIN_EMAIL=admin@webw1n.shop
-export WEBWIN_ADMIN_PASSWORD=sua-senha-forte
-export WEBWIN_JWT_SECRET=uma-chave-longa-e-aleatoria
-node --experimental-sqlite src/server.js
-```
+No SQL Editor, abra `supabase/primeiro-admin.sql`, troque `COLE_A_SENHA_AQUI` e execute uma vez. Depois apague a senha da sua maquina.
 
-Ou com Docker:
+E-mail: `admin@webw1n.shop`. No primeiro login o admin troca a senha.
 
-```bash
-docker build -t webwin .
-docker run -d --name webwin -p 80:3001 \
-  -e WEBWIN_ADMIN_EMAIL=admin@webw1n.shop \
-  -e WEBWIN_ADMIN_PASSWORD=sua-senha-forte \
-  -e WEBWIN_JWT_SECRET=uma-chave-longa-e-aleatoria \
-  -v webwin-data:/app/backend/data \
-  webwin
-```
+### 5. GitHub Pages
 
-## Apontar webw1n.shop
+No repositorio `mathewin/webwin`:
 
-O domínio está na Hostinger. Aponte o DNS para o servidor onde o container/processo estiver rodando:
+1. Settings → Pages → Source: Deploy from a branch
+2. Branch `master`, pasta `/ (root)`
+3. Custom domain: `webw1n.shop`
+4. Marque Enforce HTTPS quando o certificado ficar pronto
 
-- Tipo A, nome `@`, valor = IP do servidor
-- Tipo A, nome `www`, valor = o mesmo IP
+O arquivo `CNAME` ja contem `webw1n.shop`.
 
-No painel da Hostinger, use o IP público da máquina (VPS ou hospedagem Node). A aplicação escuta a porta 3001 internamente; na frente coloque HTTPS (Caddy, Nginx ou o proxy da Hostinger) para `webw1n.shop`.
+### 6. DNS (Hostinger)
+
+Troque os registros A do apex pelos IPs oficiais do GitHub Pages (veja a documentacao atual do GitHub: Pages → Custom domain). Nao use o IP de parking da Hostinger.
+
+- `A` `@` → IPs do GitHub Pages
+- `CNAME` `www` → `mathewin.github.io` (ou o que o GitHub mostrar)
+
+Adicione o dominio no repositorio **antes** de apontar o DNS.
 
 ## Perfis
 
-- Admin: dashboard, vendas, comissões, renovações, usuários, configurações, auditoria e exportação CSV.
-- Vendedor: demos disponíveis, minhas demos, fechar venda (piso configurável) e comissões.
-- Desenvolvedor: fila de @, pegar, colar link da demo, ajustes e histórico. Sem financeiro.
+- Admin: dashboard, vendas, comissoes, renovacoes, usuarios, configuracoes, auditoria e CSV. Sem WhatsApp e sem anotacoes.
+- Vendedor: demos disponiveis, minhas demos, fechar venda (piso) e comissoes.
+- Desenvolvedor: fila de @, pegar, colar link da demo, ajustes e historico. Sem financeiro.
 
-## Banco e segurança
+Plano semestral: vence em 6 meses. Plano anual: 6 meses incluidos + 12 de renovacao (18 meses no total).
 
-Schema Postgres + RLS para Supabase em `supabase/schema.sql`.
+## Checklist
 
-A API usa SQLite com as mesmas regras: trava de posse, piso de preço, limite de reservas, liberação automática, comissão gravada no fechamento, auditoria e LGPD.
-
-## Testes
-
-```bash
-cd backend
-npm test
-```
+- Login admin, vendedor e desenvolvedor
+- Troca de senha no primeiro acesso
+- Admin cria usuario
+- Fila vazia no inicio; dev adiciona @
+- Vendedor pega demo; outro vendedor nao pega a mesma
+- Valor abaixo do piso e recusado
+- Admin nao ve WhatsApp nem anotacoes
+- Acesso cruzado (vendedor no painel admin) e recusado
