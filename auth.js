@@ -16,7 +16,7 @@ async function loadPerfil() {
 function renderLogin(onOk) {
   rootEl().innerHTML = `
     <div class="login">
-      <form class="card" id="f-login">
+      <form class="card" id="f-login" method="post" action="#">
         <div class="brand" style="margin-bottom:16px">
           <div class="logo">W</div>
           <div>
@@ -24,8 +24,8 @@ function renderLogin(onOk) {
             <div class="muted">${esc(siteMeta().sub)}</div>
           </div>
         </div>
-        <div class="field"><label>E-mail</label><input class="input" id="email" type="email" required /></div>
-        <div class="field"><label>Senha</label><input class="input" id="senha" type="password" required /></div>
+        <div class="field"><label>E-mail</label><input class="input" id="email" type="email" autocomplete="username" required /></div>
+        <div class="field"><label>Senha</label><input class="input" id="senha" type="password" autocomplete="current-password" required /></div>
         <div id="err"></div>
         <button class="btn" type="submit">Entrar</button>
       </form>
@@ -61,10 +61,10 @@ function renderLogin(onOk) {
 function renderTrocaSenha(user, onOk) {
   rootEl().innerHTML = `
     <div class="login">
-      <form class="card" id="f-senha">
+      <form class="card" id="f-senha" method="post" action="#">
         <div class="h1">Troque a senha provisória</div>
         <p class="muted">Olá, ${esc(user.nome)}. Defina uma senha nova para continuar.</p>
-        <div class="field"><label>Nova senha</label><input class="input" id="senha" type="password" minlength="6" required /></div>
+        <div class="field"><label>Nova senha</label><input class="input" id="senha" type="password" minlength="6" autocomplete="new-password" required /></div>
         <div id="err"></div>
         <button class="btn" type="submit">Salvar senha</button>
       </form>

@@ -74,7 +74,7 @@ async function htmlVend(page, cfg, fechar) {
       </div>`).join("") || `<div class="card muted">Você ainda não reservou demos.</div>`;
     const modal = fechar ? `
       <div class="modal-bg" id="modal-bg">
-        <form class="card modal" id="f-fechar" data-lead="${esc(fechar.id)}">
+        <form class="card modal" id="f-fechar" method="post" action="#" data-lead="${esc(fechar.id)}">
           <div class="h1">Fechar venda</div>
           <p class="muted">@${esc(fechar.instagram_handle)} · piso ${brl(cfg.preco_minimo)}</p>
           <div class="field"><label>Valor (R$)</label><input class="input" id="valor" type="number" min="${cfg.preco_minimo}" step="0.01" value="${cfg.preco_tabela}" required /></div>

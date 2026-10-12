@@ -198,7 +198,7 @@ async function htmlAdmin(page, filtros) {
     if (error) throw new Error(pgErr(error));
     return `
       <div class="grid">
-        <form class="card" id="f-user">
+        <form class="card" id="f-user" method="post" action="#">
           <b>Novo usuário</b>
           <div class="field"><label>Nome</label><input class="input" id="u-nome" required /></div>
           <div class="field"><label>E-mail</label><input class="input" type="email" id="u-email" required /></div>
@@ -218,7 +218,7 @@ async function htmlAdmin(page, filtros) {
               <button class="btn ghost" data-ativo="${esc(u.id)}" data-on="${u.ativo ? "0" : "1"}">${u.ativo ? "Desativar" : "Ativar"}</button>
             </div>
           </div>`).join("")}
-        <form class="card" id="f-lista">
+        <form class="card" id="f-lista" method="post" action="#">
           <b>Adicionar @ à fila</b>
           <textarea rows="4" id="lista" placeholder="um @ por linha" required></textarea>
           <button class="btn" style="margin-top:8px">Adicionar</button>
@@ -238,7 +238,7 @@ async function htmlAdmin(page, filtros) {
       ["dias_para_liberar", "Dias para a demo voltar à fila"],
     ];
     return `
-      <form class="card" id="f-cfg">
+      <form class="card" id="f-cfg" method="post" action="#">
         ${fields.map(([k, lab]) => `<div class="field"><label>${lab}</label><input class="input" type="number" id="c-${k}" value="${esc(cfg?.[k] ?? "")}" /></div>`).join("")}
         <button class="btn">Salvar</button>
         <div style="margin-top:16px">

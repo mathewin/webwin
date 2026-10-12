@@ -43,7 +43,7 @@ async function htmlDev(page) {
       </div>`).join("") || `<div class="card muted">Nenhum @ na fila agora.</div>`;
     return `
       <div class="grid">
-        <form class="card" id="f-lista">
+        <form class="card" id="f-lista" method="post" action="#">
           <b>Adicionar @ à fila</b>
           <div class="field" style="margin-top:10px"><label>Lista (um @ por linha)</label><textarea rows="4" id="lista" required></textarea></div>
           <div class="grid grid-2">
