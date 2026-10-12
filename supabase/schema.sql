@@ -845,7 +845,16 @@ grant execute on function public.concluir_troca_senha() to authenticated;
 do $$
 begin
   begin
-    alter publication supabase_realtime add table public.leads;
+    alter publication supabase_realtime drop table public.leads;
+  exception when undefined_object then
+    null;
+  end;
+  begin
+    alter publication supabase_realtime add table public.leads (
+      id, instagram_handle, nicho, cidade, status,
+      desenvolvedor_id, vendedor_id, link_demo, foto_capa,
+      reservado_em, atualizado_em, criado_em
+    );
   exception when duplicate_object then
     null;
   end;
